@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
+export const dynamic = 'force-dynamic';
+
 const SESSIONS_DIR = '/home/vincent/.openclaw/agents/hera/sessions';
 const GAP_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
 

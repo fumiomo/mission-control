@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { readFileSync } from 'fs';
 
+export const dynamic = 'force-dynamic';
+
 const LOG_PATH = '/home/vincent/storage/data/watchtower/logs/hera-triage.log';
 
 export interface PipelineRun {
