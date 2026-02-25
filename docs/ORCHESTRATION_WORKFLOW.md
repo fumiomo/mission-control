@@ -2,6 +2,21 @@
 
 This guide explains how the master agent should orchestrate sub-agents to properly integrate with Mission Control.
 
+## When to Use Mission Control
+
+**Use MC task tracking when:**
+- Task will take more than ~10 minutes
+- Spawning a sub-agent or coding agent
+- Multi-file features, refactors, or anything producing a PR
+- Work that benefits from lifecycle visibility (spawned → PR → CI → review → merged)
+
+**Don't bother with MC for:**
+- Quick fixes, one-liner edits, config changes
+- Anything done inline in conversation (no sub-agent)
+- Simple file reads, searches, or questions
+
+**Rule of thumb:** If it spawns an agent → track in MC. If the orchestrator does it directly in conversation → skip MC.
+
 ## Overview
 
 When the orchestrator spawns a sub-agent to work on a task, **all activities, deliverables, and session info must be logged** to Mission Control so the UI shows real-time progress.
