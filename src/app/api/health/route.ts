@@ -101,7 +101,6 @@ function getRunningAgents(): RunningAgent[] {
 }
 
 function getLastAssistantMessage(sessionId: string): { text: string; timestamp: number } | null {
-  // Try to find the JSONL file
   const filePath = join(SESSIONS_DIR, `${sessionId}.jsonl`);
   try {
     statSync(filePath);
@@ -109,33 +108,49 @@ function getLastAssistantMessage(sessionId: string): { text: string; timestamp: 
     return null;
   }
 
-  // Read last 20 lines to find the last assistant message
-  const lines = run(`tail -20 "${filePath}"`).split('\n').filter(Boolean);
+  // Read last 30 lines
+  const lines = run(`tail -30 "${filePath}"`).split('\n').filter(Boolean);
 
-  for (let i = lines.length - 1; i >= 0; i--) {
+  // Parse all recent messages in order
+  const messages: { role: string; text: string; timestamp: number; isHera: boolean }[] = [];
+  for (const line of lines) {
     try {
-      const entry = JSON.parse(lines[i]);
+      const entry = JSON.parse(line);
       const msg = entry.message || entry;
-      if (msg.role !== 'assistant') continue;
+      if (!msg.role || !['user', 'assistant'].includes(msg.role)) continue;
 
       const content = msg.content;
       let text = '';
-      let timestamp = 0;
-
       if (typeof content === 'string') {
         text = content;
       } else if (Array.isArray(content)) {
-        text = content
-          .filter((c: any) => c.type === 'text')
-          .map((c: any) => c.text)
-          .join(' ');
+        text = content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join(' ');
       }
+      if (!text.trim()) continue;
 
-      timestamp = msg.timestamp || (entry.timestamp ? new Date(entry.timestamp).getTime() : 0);
-      if (text) return { text: text.trim(), timestamp };
-    } catch {
-      continue;
+      const timestamp = msg.timestamp || (entry.timestamp ? new Date(entry.timestamp).getTime() : 0);
+      const isHera = msg.role === 'user' && (
+        text.includes('[System: Hera') || 
+        text.includes('Hera just triaged') || 
+        text.includes('Hera (decision-maker')
+      );
+      messages.push({ role: msg.role, text: text.trim(), timestamp, isHera });
+    } catch { continue; }
+  }
+
+  // Walk backwards to find the last assistant message
+  // But skip it if a non-Hera user message came AFTER it (meaning human replied)
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role === 'assistant') {
+      return { text: m.text, timestamp: m.timestamp };
     }
+    // If we hit a user message that's NOT from Hera before finding an assistant msg,
+    // it means the last exchange was human→agent (not blocked)
+    if (m.role === 'user' && !m.isHera) {
+      return null;
+    }
+    // If it's a Hera message, skip it and keep looking for the assistant message
   }
   return null;
 }
