@@ -7,6 +7,7 @@ import type { WorkspaceStats } from '@/lib/types';
 import { ServerMonitor } from './ServerMonitor';
 import { AgentOverview } from './AgentOverview';
 import { HealthStatus } from './HealthStatus';
+import { SystemServices } from './SystemServices';
 
 export function WorkspaceDashboard() {
   const [workspaces, setWorkspaces] = useState<WorkspaceStats[]>([]);
@@ -72,8 +73,9 @@ export function WorkspaceDashboard() {
 
         {/* Agent Health + Overview */}
         <div className="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
             <HealthStatus />
+            <SystemServices />
           </div>
           <div className="lg:col-span-2">
             <AgentOverview />
