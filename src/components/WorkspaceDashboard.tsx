@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { Plus, ArrowRight, Folder, Users, CheckSquare, Trash2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import type { WorkspaceStats } from '@/lib/types';
-import { ServerMonitor } from './ServerMonitor';
-import { AgentOverview } from './AgentOverview';
-import { HealthStatus } from './HealthStatus';
-import { SystemServices } from './SystemServices';
+import { ServerMonitor } from './watchtower/ServerMonitor';
+import { AgentOverview } from './watchtower/AgentOverview';
+import { HealthStatus } from './watchtower/HealthStatus';
+import { SystemServices } from './watchtower/SystemServices';
 
 export function WorkspaceDashboard() {
   const [workspaces, setWorkspaces] = useState<WorkspaceStats[]>([]);
