@@ -8,6 +8,7 @@ import { ServerMonitor } from './watchtower/ServerMonitor';
 import { AgentOverview } from './watchtower/AgentOverview';
 import { HealthStatus } from './watchtower/HealthStatus';
 import { SystemServices } from './watchtower/SystemServices';
+import { TaskQueue } from './watchtower/TaskQueue';
 
 export function WorkspaceDashboard() {
   const [workspaces, setWorkspaces] = useState<WorkspaceStats[]>([]);
@@ -80,6 +81,11 @@ export function WorkspaceDashboard() {
           <div>
             <AgentOverview />
           </div>
+        </div>
+
+        {/* Mission Queue */}
+        <div className="mb-8">
+          <TaskQueue />
         </div>
 
         <div className="mb-8">
