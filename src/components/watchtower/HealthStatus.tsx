@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, XCircle, Terminal, MessageCircleQuestion, Cpu, RotateCcw } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, XCircle, Terminal, MessageCircleQuestion, Cpu, Bomb } from 'lucide-react';
 
 interface HealthIssue {
   session: string;
@@ -36,6 +36,7 @@ interface RunningAgent {
   cpu: string;
   memory: string;
   command: string;
+  spawnedBy: 'openclaw' | 'user';
 }
 
 interface HealthData {
@@ -95,10 +96,10 @@ export function HealthStatus() {
             } catch {}
             setTimeout(() => setRestarting(false), 5000);
           }}
-          className="ml-auto px-2 py-1 text-xs rounded border border-mc-border text-mc-text-secondary hover:text-red-400 hover:border-red-400/50 transition-colors flex items-center gap-1"
+          className="ml-auto px-2 py-1 text-xs rounded border border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-400 transition-colors flex items-center gap-1"
           disabled={restarting}
         >
-          <RotateCcw className={`w-3 h-3 ${restarting ? 'animate-spin' : ''}`} />
+          <Bomb className={`w-3 h-3 ${restarting ? 'animate-pulse' : ''}`} />
           {restarting ? 'Restarting...' : 'Restart'}
         </button>
         <div
@@ -175,7 +176,13 @@ export function HealthStatus() {
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-mc-accent-green animate-pulse flex-shrink-0" />
                     <span className="text-sm font-medium">{a.type}</span>
-                    <span className="text-xs text-mc-text-secondary">PID {a.pid}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                      a.spawnedBy === 'openclaw'
+                        ? 'bg-mc-accent-purple/20 text-mc-accent-purple'
+                        : 'bg-mc-text-secondary/20 text-mc-text-secondary'
+                    }`}>
+                      {a.spawnedBy === 'openclaw' ? '⚡ openclaw' : '👤 user'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-mc-text-secondary">
                     <span>{a.cpu} CPU</span>

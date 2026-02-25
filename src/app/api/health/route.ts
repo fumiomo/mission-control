@@ -46,49 +46,56 @@ interface RunningAgent {
   cpu: string;
   memory: string;
   command: string;
+  spawnedBy: 'openclaw' | 'user';
 }
 
 function getRunningAgents(): RunningAgent[] {
-  // Find claude/codex agent processes
-  const raw = run('ps aux --sort=-%cpu 2>/dev/null');
+  // Get gateway PID for matching
+  const gatewayPid = run('pgrep -f openclaw-gateway 2>/dev/null').split('\n')[0]?.trim() || '';
+
+  // Find claude/codex agent processes with parent PID info
+  const raw = run('ps -eo pid,ppid,%cpu,%mem,etime,args --sort=-%cpu 2>/dev/null');
   if (!raw) return [];
 
   const agents: RunningAgent[] = [];
-  for (const line of raw.split('\n')) {
-    // Match claude or codex processes (but not grep, not this health check)
-    if (/(claude|codex)/.test(line) && !line.includes('grep') && !line.includes('health')) {
-      const parts = line.trim().split(/\s+/);
-      if (parts.length < 11) continue;
-      const pid = parts[1];
-      const cpu = parts[2] + '%';
-      const mem = parts[3] + '%';
-      const startTime = parts[8];
-      const elapsed = parts[9];
-      const cmd = parts.slice(10).join(' ');
+  for (const line of raw.split('\n').slice(1)) {
+    if (!(/(claude|codex)/.test(line)) || line.includes('grep') || line.includes('health')) continue;
 
-      // Skip shell wrappers and non-agent processes
-      if (cmd.includes('/bin/bash -c') || cmd.includes('snapshot')) continue;
+    const parts = line.trim().split(/\s+/);
+    if (parts.length < 6) continue;
+    const pid = parts[0];
+    const ppid = parts[1];
+    const cpu = parts[2] + '%';
+    const mem = parts[3] + '%';
+    const elapsed = parts[4];
+    const cmd = parts.slice(5).join(' ');
 
-      let type = 'unknown';
-      if (cmd.includes('claude')) type = 'claude-code';
-      if (cmd.includes('codex')) type = 'codex';
+    // Skip shell wrappers and non-agent processes
+    if (cmd.includes('/bin/bash -c') || cmd.includes('snapshot')) continue;
 
-      // Extract task hint from command
-      let taskHint = '';
-      if (cmd.includes('--dangerously-skip-permissions')) {
-        const afterFlag = cmd.split('--dangerously-skip-permissions')[1]?.trim();
-        if (afterFlag) taskHint = afterFlag.substring(0, 80);
-      }
+    let type = 'unknown';
+    if (cmd.includes('claude')) type = 'claude-code';
+    if (cmd.includes('codex')) type = 'codex';
 
-      agents.push({
-        pid,
-        type,
-        uptime: elapsed,
-        cpu,
-        memory: mem,
-        command: taskHint || cmd.substring(0, 80),
-      });
+    // Determine if spawned by OpenClaw
+    const spawnedByOpenClaw = ppid === gatewayPid;
+
+    // Extract task hint from command
+    let taskHint = '';
+    if (cmd.includes('--dangerously-skip-permissions')) {
+      const afterFlag = cmd.split('--dangerously-skip-permissions')[1]?.trim();
+      if (afterFlag) taskHint = afterFlag.substring(0, 120);
     }
+
+    agents.push({
+      pid,
+      type,
+      uptime: elapsed,
+      cpu,
+      memory: mem,
+      command: taskHint || cmd.substring(0, 80),
+      spawnedBy: spawnedByOpenClaw ? 'openclaw' : 'user',
+    });
   }
   return agents;
 }
