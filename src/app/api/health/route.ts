@@ -39,6 +39,60 @@ interface BlockedSession {
 
 const SESSIONS_DIR = '/home/vincent/.openclaw/agents/main/sessions';
 
+interface RunningAgent {
+  pid: string;
+  type: string;
+  uptime: string;
+  cpu: string;
+  memory: string;
+  command: string;
+}
+
+function getRunningAgents(): RunningAgent[] {
+  // Find claude/codex agent processes
+  const raw = run('ps aux --sort=-%cpu 2>/dev/null');
+  if (!raw) return [];
+
+  const agents: RunningAgent[] = [];
+  for (const line of raw.split('\n')) {
+    // Match claude or codex processes (but not grep, not this health check)
+    if (/(claude|codex)/.test(line) && !line.includes('grep') && !line.includes('health')) {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length < 11) continue;
+      const pid = parts[1];
+      const cpu = parts[2] + '%';
+      const mem = parts[3] + '%';
+      const startTime = parts[8];
+      const elapsed = parts[9];
+      const cmd = parts.slice(10).join(' ');
+
+      // Skip shell wrappers and non-agent processes
+      if (cmd.includes('/bin/bash -c') || cmd.includes('snapshot')) continue;
+
+      let type = 'unknown';
+      if (cmd.includes('claude')) type = 'claude-code';
+      if (cmd.includes('codex')) type = 'codex';
+
+      // Extract task hint from command
+      let taskHint = '';
+      if (cmd.includes('--dangerously-skip-permissions')) {
+        const afterFlag = cmd.split('--dangerously-skip-permissions')[1]?.trim();
+        if (afterFlag) taskHint = afterFlag.substring(0, 80);
+      }
+
+      agents.push({
+        pid,
+        type,
+        uptime: elapsed,
+        cpu,
+        memory: mem,
+        command: taskHint || cmd.substring(0, 80),
+      });
+    }
+  }
+  return agents;
+}
+
 function getLastAssistantMessage(sessionId: string): { text: string; timestamp: number } | null {
   // Try to find the JSONL file
   const filePath = join(SESSIONS_DIR, `${sessionId}.jsonl`);
@@ -199,6 +253,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Running agent processes
+    const runningAgents = getRunningAgents();
+
     // Tmux session checks
     const tmuxSessions = getTmuxSessions();
     for (const t of tmuxSessions) {
@@ -222,6 +279,7 @@ export async function GET(req: NextRequest) {
       totalSessions: sessions.length,
       activeSessions: sessions.filter((s: any) => (now - s.updatedAt) / 60000 < 30).length,
       tmuxSessions,
+      runningAgents,
       blocked,
       issues,
     });

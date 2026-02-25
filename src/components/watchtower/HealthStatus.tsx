@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, XCircle, Terminal, MessageCircleQuestion } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, XCircle, Terminal, MessageCircleQuestion, Cpu } from 'lucide-react';
 
 interface HealthIssue {
   session: string;
@@ -29,12 +29,22 @@ interface BlockedSession {
   minutesWaiting: number;
 }
 
+interface RunningAgent {
+  pid: string;
+  type: string;
+  uptime: string;
+  cpu: string;
+  memory: string;
+  command: string;
+}
+
 interface HealthData {
   healthy: boolean;
   timestamp: number;
   totalSessions: number;
   activeSessions: number;
   tmuxSessions?: TmuxSession[];
+  runningAgents?: RunningAgent[];
   blocked?: BlockedSession[];
   issues: HealthIssue[];
 }
@@ -65,6 +75,7 @@ export function HealthStatus() {
   const criticalCount = health.issues.filter((i) => i.severity === 'critical').length;
   const warningCount = health.issues.filter((i) => i.severity === 'warning').length;
   const tmux = health.tmuxSessions || [];
+  const agents = health.runningAgents || [];
   const blocked = health.blocked || [];
   const hasProblems = criticalCount > 0 || warningCount > 0;
   const allClear = !hasProblems && blocked.length === 0;
@@ -126,6 +137,44 @@ export function HealthStatus() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Running Agents */}
+      {agents.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Cpu className="w-4 h-4 text-mc-accent-green" />
+            <span className="text-sm font-medium text-mc-accent-green">
+              Running ({agents.length})
+            </span>
+          </div>
+          <div className="bg-mc-bg border border-mc-border rounded-lg overflow-hidden">
+            {agents.map((a) => (
+              <div
+                key={a.pid}
+                className="px-4 py-2.5 border-b border-mc-border last:border-b-0"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-mc-accent-green animate-pulse flex-shrink-0" />
+                    <span className="text-sm font-medium">{a.type}</span>
+                    <span className="text-xs text-mc-text-secondary">PID {a.pid}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-mc-text-secondary">
+                    <span>{a.cpu} CPU</span>
+                    <span>{a.memory} MEM</span>
+                    <span>{a.uptime}</span>
+                  </div>
+                </div>
+                {a.command && (
+                  <div className="text-xs text-mc-text-secondary mt-1 truncate ml-4">
+                    {a.command}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
