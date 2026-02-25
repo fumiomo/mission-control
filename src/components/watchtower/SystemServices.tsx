@@ -66,15 +66,15 @@ export function SystemServices() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Server className="w-5 h-5 text-mc-accent" />
-          <h2 className="text-lg font-semibold">System</h2>
-          <span className="text-xs text-mc-text-secondary">
-            {activeServices.length} services · {data.crons.length} cron jobs
+          <Server className="w-5 h-5 text-mc-accent flex-shrink-0" />
+          <h2 className="text-lg font-semibold whitespace-nowrap">System</h2>
+          <span className="text-xs text-mc-text-secondary whitespace-nowrap">
+            {activeServices.length} services · {data.crons.length} crons
           </span>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-shrink-0">
           {(['services', 'crons'] as const).map((t) => (
             <button
               key={t}
