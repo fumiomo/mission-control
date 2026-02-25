@@ -72,6 +72,11 @@ export function WorkspaceDashboard() {
           <ServerMonitor />
         </div>
 
+        {/* Mission Queue */}
+        <div className="mb-8">
+          <TaskQueue />
+        </div>
+
         {/* Agent Health + Overview */}
         <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-6">
@@ -81,11 +86,6 @@ export function WorkspaceDashboard() {
           <div>
             <AgentOverview />
           </div>
-        </div>
-
-        {/* Mission Queue */}
-        <div className="mb-8">
-          <TaskQueue />
         </div>
 
         <div className="mb-8">
@@ -110,7 +110,7 @@ export function WorkspaceDashboard() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {workspaces.map((workspace) => (
               <WorkspaceCard 
                 key={workspace.id} 
@@ -122,12 +122,10 @@ export function WorkspaceDashboard() {
             {/* Add workspace card */}
             <button
               onClick={() => setShowCreateModal(true)}
-              className="border-2 border-dashed border-mc-border rounded-xl p-6 hover:border-mc-accent/50 transition-colors flex flex-col items-center justify-center gap-3 h-full min-h-[120px]"
+              className="border-2 border-dashed border-mc-border rounded-lg p-3 hover:border-mc-accent/50 transition-colors flex items-center justify-center gap-2 h-full"
             >
-              <div className="w-12 h-12 rounded-full bg-mc-bg-tertiary flex items-center justify-center">
-                <Plus className="w-6 h-6 text-mc-text-secondary" />
-              </div>
-              <span className="text-mc-text-secondary font-medium">Add Workspace</span>
+              <Plus className="w-4 h-4 text-mc-text-secondary" />
+              <span className="text-mc-text-secondary text-sm font-medium">Add</span>
             </button>
           </div>
         )}
@@ -174,45 +172,31 @@ function WorkspaceCard({ workspace, onDelete }: { workspace: WorkspaceStats; onD
   return (
     <>
     <Link href={`/workspace/${workspace.slug}`}>
-      <div className="bg-mc-bg-secondary border border-mc-border rounded-xl p-6 hover:border-mc-accent/50 transition-all hover:shadow-lg cursor-pointer group relative">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">{workspace.icon}</span>
-            <div>
-              <h3 className="font-semibold text-lg group-hover:text-mc-accent transition-colors">
-                {workspace.name}
-              </h3>
-              <p className="text-sm text-mc-text-secondary">/{workspace.slug}</p>
-            </div>
+      <div className="bg-mc-bg-secondary border border-mc-border rounded-lg p-3 hover:border-mc-accent/50 transition-all cursor-pointer group relative">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-lg flex-shrink-0">{workspace.icon}</span>
+            <h3 className="font-medium text-sm group-hover:text-mc-accent transition-colors truncate">
+              {workspace.name}
+            </h3>
           </div>
-          <div className="flex items-center gap-2">
-            {workspace.id !== 'default' && (
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowDeleteConfirm(true);
-                }}
-                className="p-1.5 rounded hover:bg-mc-accent-red/20 text-mc-text-secondary hover:text-mc-accent-red transition-colors opacity-0 group-hover:opacity-100"
-                title="Delete workspace"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-            <ArrowRight className="w-5 h-5 text-mc-text-secondary group-hover:text-mc-accent transition-colors" />
-          </div>
+          {workspace.id !== 'default' && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowDeleteConfirm(true);
+              }}
+              className="p-1 rounded hover:bg-mc-accent-red/20 text-mc-text-secondary hover:text-mc-accent-red transition-colors opacity-0 group-hover:opacity-100"
+              title="Delete workspace"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
         </div>
-
-        {/* Simple task/agent counts */}
-        <div className="flex items-center gap-4 text-sm text-mc-text-secondary mt-4">
-          <div className="flex items-center gap-1">
-            <CheckSquare className="w-4 h-4" />
-            <span>{workspace.taskCounts.total} {workspace.taskCounts.total === 1 ? 'task' : 'tasks'}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Users className="w-4 h-4" />
-            <span>{workspace.agentCount} {workspace.agentCount === 1 ? 'agent' : 'agents'}</span>
-          </div>
+        <div className="flex items-center gap-3 text-[10px] text-mc-text-secondary">
+          <span>{workspace.taskCounts.total} {workspace.taskCounts.total === 1 ? 'task' : 'tasks'}</span>
+          <span>{workspace.agentCount} {workspace.agentCount === 1 ? 'agent' : 'agents'}</span>
         </div>
       </div>
     </Link>
