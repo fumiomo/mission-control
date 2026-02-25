@@ -193,14 +193,7 @@ export async function GET(req: NextRequest) {
               lastQuestion: questionPreview,
               minutesWaiting: waitMinutes,
             });
-            issues.push({
-              session: name,
-              channel,
-              issue: `Waiting for input (${waitMinutes}m): "${questionPreview.substring(0, 60)}..."`,
-              severity: 'warning',
-              lastActive: lastMsg.timestamp,
-              minutesAgo: waitMinutes,
-            });
+            // Don't add to issues — shown separately in Waiting for Input section
           }
         }
       }

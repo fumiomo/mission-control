@@ -66,6 +66,8 @@ export function HealthStatus() {
   const warningCount = health.issues.filter((i) => i.severity === 'warning').length;
   const tmux = health.tmuxSessions || [];
   const blocked = health.blocked || [];
+  const hasProblems = criticalCount > 0 || warningCount > 0;
+  const allClear = !hasProblems && blocked.length === 0;
 
   return (
     <div className="space-y-3">
@@ -74,20 +76,27 @@ export function HealthStatus() {
         <h2 className="text-lg font-semibold">Agent Health</h2>
         <div
           className={`ml-2 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            health.healthy
+            allClear
               ? 'bg-mc-accent-green/20 text-mc-accent-green'
-              : 'bg-red-500/20 text-red-400'
+              : hasProblems
+              ? 'bg-red-500/20 text-red-400'
+              : 'bg-yellow-500/20 text-yellow-500'
           }`}
         >
-          {health.healthy ? (
+          {allClear ? (
             <>
               <CheckCircle className="w-3 h-3" />
               All Clear
             </>
-          ) : (
+          ) : hasProblems ? (
             <>
               <XCircle className="w-3 h-3" />
               {criticalCount} Critical{warningCount > 0 ? `, ${warningCount} Warning` : ''}
+            </>
+          ) : (
+            <>
+              <MessageCircleQuestion className="w-3 h-3" />
+              {blocked.length} Waiting
             </>
           )}
         </div>

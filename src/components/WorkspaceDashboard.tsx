@@ -201,11 +201,11 @@ function WorkspaceCard({ workspace, onDelete }: { workspace: WorkspaceStats; onD
         <div className="flex items-center gap-4 text-sm text-mc-text-secondary mt-4">
           <div className="flex items-center gap-1">
             <CheckSquare className="w-4 h-4" />
-            <span>{workspace.taskCounts.total} tasks</span>
+            <span>{workspace.taskCounts.total} {workspace.taskCounts.total === 1 ? 'task' : 'tasks'}</span>
           </div>
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-            <span>{workspace.agentCount} agents</span>
+            <span>{workspace.agentCount} {workspace.agentCount === 1 ? 'agent' : 'agents'}</span>
           </div>
         </div>
       </div>

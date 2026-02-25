@@ -26,11 +26,21 @@ function getSessionName(s: Session): string {
   if (s.groupChannel) return s.groupChannel;
   if (s.subject) return s.subject;
   if (s.displayName) {
-    const parts = s.displayName.split('#');
-    if (parts.length > 1) return '#' + parts[parts.length - 1];
+    // Discord: "discord:123#channel-name" → "#channel-name"
+    const hashParts = s.displayName.split('#');
+    if (hashParts.length > 1) return '#' + hashParts[hashParts.length - 1];
+    // Telegram: "telegram:g-some-name" → "Some Name"
+    if (s.displayName.startsWith('telegram:g-')) {
+      return s.displayName.replace('telegram:g-', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+    if (s.displayName.startsWith('telegram:')) {
+      return s.displayName.replace('telegram:', '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
     return s.displayName.split(':').pop() || s.displayName;
   }
-  return s.key.split(':').pop() || s.key;
+  // Key fallback: "agent:main:subagent:xyz" → "xyz"
+  const keyParts = s.key.split(':');
+  return keyParts[keyParts.length - 1] || s.key;
 }
 
 function getChannelIcon(channel?: string) {

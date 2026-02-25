@@ -66,7 +66,18 @@ export async function GET() {
 
       return { name, status, active, pid, memory, cpu, description };
     })
-    .filter((s) => !s.name.startsWith('dbus') && !s.name.startsWith('gpg') && !s.name.startsWith('pk'));
+    .filter((s) => {
+      // Only show our services + relevant ones
+      const dominated = [
+        'at-spi', 'dbus', 'dconf', 'dirmngr', 'evolution', 'gcr-', 'gnome',
+        'gpg', 'gvfs', 'keyboxd', 'launchpadlib', 'pipewire', 'pk',
+        'pulseaudio', 'snap', 'ssh-agent', 'systemd', 'tracker',
+        'wireplumber', 'xdg', 'plasma', 'xfce',
+      ];
+      // Filter out junk names and bullet chars from bad parsing
+      if (!s.name || s.name.startsWith('●') || s.name.length < 2) return false;
+      return !dominated.some((prefix) => s.name.startsWith(prefix));
+    });
 
   // System timers
   const timersRaw = run('systemctl --user list-timers --no-pager --no-legend 2>/dev/null');
