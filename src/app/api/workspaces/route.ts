@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
           testing: 0,
           review: 0,
           done: 0,
+          stalled: 0,
+          needs_human: 0,
           total: 0
         };
         

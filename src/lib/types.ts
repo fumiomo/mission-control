@@ -2,7 +2,7 @@
 
 export type AgentStatus = 'standby' | 'working' | 'offline';
 
-export type TaskStatus = 'planning' | 'inbox' | 'assigned' | 'in_progress' | 'testing' | 'review' | 'done';
+export type TaskStatus = 'planning' | 'inbox' | 'assigned' | 'in_progress' | 'testing' | 'review' | 'done' | 'stalled' | 'needs_human';
 
 export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
 
@@ -138,6 +138,8 @@ export interface WorkspaceStats {
     testing: number;
     review: number;
     done: number;
+    stalled: number;
+    needs_human: number;
     total: number;
   };
   agentCount: number;

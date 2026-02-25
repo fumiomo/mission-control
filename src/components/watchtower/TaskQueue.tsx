@@ -30,6 +30,8 @@ const STATUS_CONFIG: Record<string, { label: string; icon: typeof Circle; color:
   in_progress: { label: 'Working', icon: Loader2, color: 'text-mc-accent-green', bg: 'bg-mc-accent-green/20' },
   testing: { label: 'Testing', icon: Eye, color: 'text-yellow-500', bg: 'bg-yellow-500/20' },
   review: { label: 'Review', icon: Eye, color: 'text-mc-accent', bg: 'bg-mc-accent/20' },
+  stalled: { label: 'Stalled', icon: Circle, color: 'text-red-500', bg: 'bg-red-500/20' },
+  needs_human: { label: 'Needs Human', icon: Circle, color: 'text-orange-500', bg: 'bg-orange-500/20' },
   done: { label: 'Done', icon: CheckCircle, color: 'text-mc-accent-green', bg: 'bg-mc-accent-green/20' },
 };
 

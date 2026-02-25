@@ -8,7 +8,9 @@ const TaskStatus = z.enum([
   'in_progress',
   'testing',
   'review',
-  'done'
+  'done',
+  'stalled',
+  'needs_human'
 ]);
 
 const TaskPriority = z.enum(['low', 'normal', 'high', 'urgent']);
