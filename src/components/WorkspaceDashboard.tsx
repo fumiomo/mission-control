@@ -54,13 +54,12 @@ export function WorkspaceDashboard() {
               <span className="text-2xl">🦞</span>
               <h1 className="text-xl font-bold">Mission Control</h1>
             </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-mc-accent text-mc-bg rounded-lg font-medium hover:bg-mc-accent/90"
+            <a
+              href="/hera"
+              className="flex items-center gap-2 px-4 py-2 bg-mc-bg rounded-lg font-medium border border-mc-border hover:bg-mc-bg-secondary transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              New Workspace
-            </button>
+              👑 Hera
+            </a>
           </div>
         </div>
       </header>
