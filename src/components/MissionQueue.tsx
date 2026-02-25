@@ -19,6 +19,7 @@ const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
   { id: 'in_progress', label: 'IN PROGRESS', color: 'border-t-mc-accent' },
   { id: 'testing', label: 'TESTING', color: 'border-t-mc-accent-cyan' },
   { id: 'review', label: 'REVIEW', color: 'border-t-mc-accent-purple' },
+  { id: 'needs_input', label: '🤖 NEEDS INPUT', color: 'border-t-blue-500' },
   { id: 'stalled', label: '⛔ STALLED', color: 'border-t-red-500' },
   { id: 'needs_human', label: '🙋 NEEDS HUMAN', color: 'border-t-orange-500' },
   { id: 'done', label: 'DONE', color: 'border-t-mc-accent-green' },

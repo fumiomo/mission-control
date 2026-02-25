@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
           done: 0,
           stalled: 0,
           needs_human: 0,
+          needs_input: 0,
           total: 0
         };
         
