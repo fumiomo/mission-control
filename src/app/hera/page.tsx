@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Crown, ChevronDown, ChevronRight, ArrowLeft, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import type { HeraMessage, HeraRun } from '@/app/api/hera/sessions/route';
+import type { PipelineRun } from '@/app/api/hera/pipeline/route';
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleString('en-US', {
@@ -103,6 +104,7 @@ function RunCard({ run }: { run: HeraRun }) {
 
 export default function HeraPage() {
   const [runs, setRuns] = useState<HeraRun[]>([]);
+  const [pipelineRuns, setPipelineRuns] = useState<PipelineRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -110,10 +112,15 @@ export default function HeraPage() {
   const load = async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
     try {
-      const res = await fetch('/api/hera/sessions');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setRuns(data.runs || []);
+      const [sessRes, pipeRes] = await Promise.all([
+        fetch('/api/hera/sessions'),
+        fetch('/api/hera/pipeline'),
+      ]);
+      if (!sessRes.ok) throw new Error(`HTTP ${sessRes.status}`);
+      const sessData = await sessRes.json();
+      const pipeData = await pipeRes.json();
+      setRuns(sessData.runs || []);
+      setPipelineRuns(pipeData.runs || []);
       setError(null);
     } catch (e) {
       setError(String(e));
@@ -141,7 +148,7 @@ export default function HeraPage() {
           </Link>
           <div className="w-px h-4 bg-mc-border" />
           <Crown className="w-5 h-5 text-mc-accent-yellow" />
-          <h1 className="text-lg font-semibold">Hera Logs</h1>
+          <h1 className="text-lg font-semibold">Hera</h1>
           <span className="text-xs text-mc-text-secondary">Decision-maker triage sessions</span>
           <button
             onClick={() => load(true)}
@@ -185,6 +192,22 @@ export default function HeraPage() {
               ))}
             </div>
           </>
+        )}
+
+        {/* Pipeline runs (cron log) */}
+        {!loading && pipelineRuns.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-sm font-semibold text-mc-text-secondary mb-3">Pipeline Runs</h2>
+            <div className="bg-mc-bg-secondary border border-mc-border rounded-lg divide-y divide-mc-border">
+              {pipelineRuns.map((run, i) => (
+                <div key={i} className="px-4 py-2.5 flex items-center gap-3 text-xs">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${run.skipped ? 'bg-mc-text-secondary' : 'bg-mc-accent-green'}`} />
+                  <span className="text-mc-text-secondary w-36 flex-shrink-0">{run.timestamp}</span>
+                  <span className={run.skipped ? 'text-mc-text-secondary' : 'text-mc-text'}>{run.summary}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>
