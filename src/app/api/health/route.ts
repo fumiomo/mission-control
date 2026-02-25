@@ -241,21 +241,18 @@ export async function GET(req: NextRequest) {
         });
       }
 
-      // Check for blocked sessions (waiting for input >15 min)
-      if (s.sessionId && minutesAgo > 15 && minutesAgo < 1440) {
+      // Check for blocked sessions (last assistant message ends with a question)
+      if (s.sessionId && minutesAgo < 1440) {
         const lastMsg = getLastAssistantMessage(s.sessionId);
         if (lastMsg && isQuestion(lastMsg.text)) {
           const waitMinutes = Math.round((now - lastMsg.timestamp) / 60000);
-          if (waitMinutes > 15) {
-            const questionPreview = lastMsg.text.split('\n').filter((l: string) => l.trim()).pop()?.substring(0, 100) || '';
-            blocked.push({
-              name,
-              channel,
-              lastQuestion: questionPreview,
-              minutesWaiting: waitMinutes,
-            });
-            // Don't add to issues — shown separately in Waiting for Input section
-          }
+          const questionPreview = lastMsg.text.split('\n').filter((l: string) => l.trim()).pop()?.substring(0, 100) || '';
+          blocked.push({
+            name,
+            channel,
+            lastQuestion: questionPreview,
+            minutesWaiting: waitMinutes,
+          });
         }
       }
     }
