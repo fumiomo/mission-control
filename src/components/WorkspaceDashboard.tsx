@@ -5,6 +5,7 @@ import { Plus, ArrowRight, Folder, Users, CheckSquare, Trash2, AlertTriangle } f
 import Link from 'next/link';
 import type { WorkspaceStats } from '@/lib/types';
 import { ServerMonitor } from './ServerMonitor';
+import { AgentOverview } from './AgentOverview';
 
 export function WorkspaceDashboard() {
   const [workspaces, setWorkspaces] = useState<WorkspaceStats[]>([]);
@@ -66,6 +67,11 @@ export function WorkspaceDashboard() {
         {/* Server Monitor */}
         <div className="mb-8">
           <ServerMonitor />
+        </div>
+
+        {/* Agent Overview */}
+        <div className="mb-8">
+          <AgentOverview />
         </div>
 
         <div className="mb-8">
