@@ -34,7 +34,12 @@ export async function GET() {
         if (triggered) summary += ' → ' + triggered.trim();
         if (dispatched) summary += ' → ' + dispatched.trim();
 
-        runs.push({ timestamp: current.timestamp, skipped, summary });
+        // Convert UTC timestamp to JST
+        const utcDate = new Date(current.timestamp);
+        const jstTimestamp = isNaN(utcDate.getTime()) 
+          ? current.timestamp 
+          : utcDate.toLocaleString('en-US', { timeZone: 'Asia/Tokyo', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+        runs.push({ timestamp: jstTimestamp, skipped, summary });
         current = null;
         continue;
       }

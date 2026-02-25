@@ -8,6 +8,7 @@ import type { PipelineRun } from '@/app/api/hera/pipeline/route';
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleString('en-US', {
+    timeZone: 'Asia/Tokyo',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -47,7 +48,7 @@ function MessageBubble({ msg }: { msg: HeraMessage }) {
         </div>
         <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed">{msg.content}</pre>
         <div className="text-[10px] text-mc-text-secondary mt-1.5 text-right">
-          {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+          {new Date(msg.timestamp).toLocaleTimeString('en-US', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
         </div>
       </div>
     </div>
