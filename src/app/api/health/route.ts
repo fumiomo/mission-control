@@ -148,7 +148,7 @@ function isQuestion(text: string): boolean {
     if (!trimmed) continue;
     if (trimmed.endsWith('?')) return true;
     // Common patterns
-    if (/\b(want me to|want to review|should [iI]|shall [iI]|would you like|let me know|thoughts\??|your call|up to you|ready to|want to proceed)/i.test(trimmed)) return true;
+    if (/\b(want me to|want to review|should [iI]|shall [iI]|would you like|let me know|thoughts\??|your call|up to you|ready to|want to proceed|how.*proceed|what.*prefer|which.*option|happy to help)/i.test(trimmed)) return true;
     // Check if line contains a ? anywhere (not just at end)
     if (trimmed.includes('?')) return true;
     break;
