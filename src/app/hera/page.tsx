@@ -24,6 +24,7 @@ function formatDuration(startMs: number, endMs: number): string {
 
 function MessageBubble({ msg }: { msg: HeraMessage }) {
   const isUser = msg.role === 'user';
+  const label = isUser ? '⚡ Pipeline' : '👑 Hera';
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
       <div
@@ -35,12 +36,15 @@ function MessageBubble({ msg }: { msg: HeraMessage }) {
             : 'bg-mc-bg-secondary border border-mc-border text-mc-text'
         }`}
       >
-        {msg.isDecision && (
-          <div className="text-xs text-mc-accent-green font-semibold mb-1 flex items-center gap-1">
-            <Crown className="w-3 h-3" />
-            Decision
-          </div>
-        )}
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-xs font-semibold text-mc-text-secondary">{label}</span>
+          {msg.isDecision && (
+            <span className="text-xs text-mc-accent-green font-semibold flex items-center gap-1">
+              <Crown className="w-3 h-3" />
+              Decision
+            </span>
+          )}
+        </div>
         <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed">{msg.content}</pre>
         <div className="text-[10px] text-mc-text-secondary mt-1.5 text-right">
           {new Date(msg.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
@@ -50,8 +54,22 @@ function MessageBubble({ msg }: { msg: HeraMessage }) {
   );
 }
 
+function extractTaskInfo(run: HeraRun): string | null {
+  // Try to find task/project name from first user message
+  const firstUser = run.messages.find(m => m.role === 'user');
+  if (!firstUser) return null;
+  // Look for task title patterns like "[high] Task Name (id: abc123)"
+  const match = firstUser.content.match(/\[(?:high|normal|low|urgent)\]\s+(.+?)\s+\(id:/);
+  if (match) return match[1];
+  // Look for "Task:" or "task" mentions
+  const taskMatch = firstUser.content.match(/(?:Task|task)[:\s]+(.+?)(?:\n|$)/);
+  if (taskMatch) return taskMatch[1].trim().slice(0, 80);
+  return null;
+}
+
 function RunCard({ run }: { run: HeraRun }) {
   const [expanded, setExpanded] = useState(false);
+  const taskInfo = extractTaskInfo(run);
 
   return (
     <div className="bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
@@ -80,6 +98,13 @@ function RunCard({ run }: { run: HeraRun }) {
               </span>
             )}
           </div>
+
+          {/* Task/project context */}
+          {taskInfo && (
+            <div className="mt-1 text-xs text-mc-accent font-medium truncate">
+              📋 {taskInfo}
+            </div>
+          )}
 
           {/* Decision previews */}
           {run.decisions.length > 0 && !expanded && (
