@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, ArrowRight, Folder, Users, CheckSquare, Trash2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import type { WorkspaceStats } from '@/lib/types';
+import { ServerMonitor } from './ServerMonitor';
 
 export function WorkspaceDashboard() {
   const [workspaces, setWorkspaces] = useState<WorkspaceStats[]>([]);
@@ -62,6 +63,11 @@ export function WorkspaceDashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Server Monitor */}
+        <div className="mb-8">
+          <ServerMonitor />
+        </div>
+
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-2">All Workspaces</h2>
           <p className="text-mc-text-secondary">
