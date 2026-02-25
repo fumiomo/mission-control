@@ -133,6 +133,7 @@ export default function HeraPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [launching, setLaunching] = useState(false);
 
   const load = async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
@@ -176,12 +177,21 @@ export default function HeraPage() {
           <h1 className="text-lg font-semibold">Hera</h1>
           <span className="text-xs text-mc-text-secondary">Decision-maker triage sessions</span>
           <button
-            onClick={() => load(true)}
-            disabled={refreshing}
-            className="ml-auto flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border border-mc-border text-mc-text-secondary hover:text-mc-text hover:border-mc-text-secondary transition-colors"
+            onClick={async () => {
+              setLaunching(true);
+              try {
+                await fetch('/api/hera/launch', { method: 'POST' });
+                // Wait a bit then refresh data
+                setTimeout(() => { load(true); setLaunching(false); }, 5000);
+              } catch {
+                setLaunching(false);
+              }
+            }}
+            disabled={launching}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs rounded bg-mc-accent-yellow/20 border border-mc-accent-yellow/40 text-mc-accent-yellow font-medium hover:bg-mc-accent-yellow/30 transition-colors"
           >
-            <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            <Crown className={`w-3 h-3 ${launching ? 'animate-spin' : ''}`} />
+            {launching ? 'Launching...' : 'Launch'}
           </button>
         </div>
       </div>
