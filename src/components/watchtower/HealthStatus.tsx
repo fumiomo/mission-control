@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, XCircle, Terminal } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, XCircle, Terminal, MessageCircleQuestion } from 'lucide-react';
 
 interface HealthIssue {
   session: string;
@@ -16,9 +16,17 @@ interface TmuxSession {
   name: string;
   created: number;
   logFile?: string;
+  logLastModified?: number;
   logStale: boolean;
   minutesRunning: number;
   minutesSinceLogUpdate?: number;
+}
+
+interface BlockedSession {
+  name: string;
+  channel: string;
+  lastQuestion: string;
+  minutesWaiting: number;
 }
 
 interface HealthData {
@@ -27,6 +35,7 @@ interface HealthData {
   totalSessions: number;
   activeSessions: number;
   tmuxSessions?: TmuxSession[];
+  blocked?: BlockedSession[];
   issues: HealthIssue[];
 }
 
@@ -56,6 +65,7 @@ export function HealthStatus() {
   const criticalCount = health.issues.filter((i) => i.severity === 'critical').length;
   const warningCount = health.issues.filter((i) => i.severity === 'warning').length;
   const tmux = health.tmuxSessions || [];
+  const blocked = health.blocked || [];
 
   return (
     <div className="space-y-3">
@@ -107,6 +117,34 @@ export function HealthStatus() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Blocked — Waiting for Input */}
+      {blocked.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <MessageCircleQuestion className="w-4 h-4 text-yellow-500" />
+            <span className="text-sm font-medium text-yellow-500">
+              Waiting for Input ({blocked.length})
+            </span>
+          </div>
+          <div className="bg-mc-bg border border-yellow-500/30 rounded-lg overflow-hidden">
+            {blocked.map((b, i) => (
+              <div
+                key={i}
+                className="px-4 py-2.5 border-b border-mc-border last:border-b-0"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{b.name}</span>
+                  <span className="text-xs text-yellow-500">{b.minutesWaiting}m waiting</span>
+                </div>
+                <div className="text-xs text-mc-text-secondary mt-1 italic truncate">
+                  &ldquo;{b.lastQuestion}&rdquo;
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { execSync } from 'child_process';
+import { readFileSync, statSync, readdirSync } from 'fs';
+import { join } from 'path';
 
 function run(cmd: string): string {
   try {
@@ -28,6 +30,69 @@ interface TmuxSession {
   minutesSinceLogUpdate?: number;
 }
 
+interface BlockedSession {
+  name: string;
+  channel: string;
+  lastQuestion: string;
+  minutesWaiting: number;
+}
+
+const SESSIONS_DIR = '/home/vincent/.openclaw/agents/main/sessions';
+
+function getLastAssistantMessage(sessionId: string): { text: string; timestamp: number } | null {
+  // Try to find the JSONL file
+  const filePath = join(SESSIONS_DIR, `${sessionId}.jsonl`);
+  try {
+    statSync(filePath);
+  } catch {
+    return null;
+  }
+
+  // Read last 20 lines to find the last assistant message
+  const lines = run(`tail -20 "${filePath}"`).split('\n').filter(Boolean);
+
+  for (let i = lines.length - 1; i >= 0; i--) {
+    try {
+      const entry = JSON.parse(lines[i]);
+      const msg = entry.message || entry;
+      if (msg.role !== 'assistant') continue;
+
+      const content = msg.content;
+      let text = '';
+      let timestamp = 0;
+
+      if (typeof content === 'string') {
+        text = content;
+      } else if (Array.isArray(content)) {
+        text = content
+          .filter((c: any) => c.type === 'text')
+          .map((c: any) => c.text)
+          .join(' ');
+      }
+
+      timestamp = msg.timestamp || (entry.timestamp ? new Date(entry.timestamp).getTime() : 0);
+      if (text) return { text: text.trim(), timestamp };
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+function isQuestion(text: string): boolean {
+  // Get the last meaningful line
+  const lines = text.split('\n').filter((l) => l.trim()).reverse();
+  for (const line of lines.slice(0, 3)) {
+    const trimmed = line.replace(/[*_`#>]/g, '').trim();
+    if (!trimmed) continue;
+    if (trimmed.endsWith('?')) return true;
+    // Common patterns
+    if (/\b(want me to|should [iI]|shall [iI]|would you like|let me know|thoughts\??|your call|up to you)/i.test(trimmed)) return true;
+    break;
+  }
+  return false;
+}
+
 function getTmuxSessions(): TmuxSession[] {
   const raw = run('tmux list-sessions -F "#{session_name}|#{session_created}" 2>/dev/null');
   if (!raw) return [];
@@ -38,7 +103,6 @@ function getTmuxSessions(): TmuxSession[] {
     const created = parseInt(createdStr) * 1000;
     const minutesRunning = Math.round((now - created) / 60000);
 
-    // Look for transcript logs in common locations
     const logLocations = [
       `/home/vincent/storage/sandbox/watchtower/tasks/${name}-transcript.log`,
       `/home/vincent/storage/sandbox/watchtower/tasks/${name}.log`,
@@ -60,7 +124,6 @@ function getTmuxSessions(): TmuxSession[] {
       }
     }
 
-    // Also check pane activity — last output time
     if (!logFile) {
       const activity = run(`tmux display-message -t "${name}" -p "#{session_activity}" 2>/dev/null`);
       if (activity) {
@@ -87,6 +150,7 @@ export async function GET(req: NextRequest) {
     const sessions = data.sessions?.sessions || [];
     const now = Date.now();
     const issues: HealthIssue[] = [];
+    const blocked: BlockedSession[] = [];
 
     // OpenClaw session checks
     for (const s of sessions) {
@@ -115,6 +179,31 @@ export async function GET(req: NextRequest) {
           minutesAgo: Math.round(minutesAgo),
         });
       }
+
+      // Check for blocked sessions (waiting for input >15 min)
+      if (s.sessionId && minutesAgo > 15 && minutesAgo < 1440) {
+        const lastMsg = getLastAssistantMessage(s.sessionId);
+        if (lastMsg && isQuestion(lastMsg.text)) {
+          const waitMinutes = Math.round((now - lastMsg.timestamp) / 60000);
+          if (waitMinutes > 15) {
+            const questionPreview = lastMsg.text.split('\n').filter((l: string) => l.trim()).pop()?.substring(0, 100) || '';
+            blocked.push({
+              name,
+              channel,
+              lastQuestion: questionPreview,
+              minutesWaiting: waitMinutes,
+            });
+            issues.push({
+              session: name,
+              channel,
+              issue: `Waiting for input (${waitMinutes}m): "${questionPreview.substring(0, 60)}..."`,
+              severity: 'warning',
+              lastActive: lastMsg.timestamp,
+              minutesAgo: waitMinutes,
+            });
+          }
+        }
+      }
     }
 
     // Tmux session checks
@@ -140,6 +229,7 @@ export async function GET(req: NextRequest) {
       totalSessions: sessions.length,
       activeSessions: sessions.filter((s: any) => (now - s.updatedAt) / 60000 < 30).length,
       tmuxSessions,
+      blocked,
       issues,
     });
   } catch (error) {
