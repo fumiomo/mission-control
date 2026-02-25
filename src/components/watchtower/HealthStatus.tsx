@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, XCircle, Terminal, MessageCircleQuestion, Cpu, Bomb } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, XCircle, Terminal, MessageCircleQuestion, Cpu, Bomb, Crown } from 'lucide-react';
+import Link from 'next/link';
 
 interface HealthIssue {
   session: string;
@@ -87,21 +88,30 @@ export function HealthStatus() {
       <div className="flex items-center gap-2">
         <Shield className="w-5 h-5 text-mc-accent-green" />
         <h2 className="text-lg font-semibold">Agent Health</h2>
-        <button
-          onClick={async () => {
-            if (!confirm('Restart OpenClaw gateway? All active sessions will be interrupted.')) return;
-            setRestarting(true);
-            try {
-              await fetch('/api/gateway/restart', { method: 'POST' });
-            } catch {}
-            setTimeout(() => setRestarting(false), 5000);
-          }}
-          className="ml-auto px-2 py-1 text-xs rounded border border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-400 transition-colors flex items-center gap-1"
-          disabled={restarting}
-        >
-          <Bomb className={`w-3 h-3 ${restarting ? 'animate-pulse' : ''}`} />
-          {restarting ? 'Restarting...' : 'Restart'}
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <Link
+            href="/hera"
+            className="px-2 py-1 text-xs rounded border border-mc-accent-yellow/40 text-mc-accent-yellow hover:bg-mc-accent-yellow/10 hover:border-mc-accent-yellow transition-colors flex items-center gap-1"
+          >
+            <Crown className="w-3 h-3" />
+            Hera Logs
+          </Link>
+          <button
+            onClick={async () => {
+              if (!confirm('Restart OpenClaw gateway? All active sessions will be interrupted.')) return;
+              setRestarting(true);
+              try {
+                await fetch('/api/gateway/restart', { method: 'POST' });
+              } catch {}
+              setTimeout(() => setRestarting(false), 5000);
+            }}
+            className="px-2 py-1 text-xs rounded border border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-400 transition-colors flex items-center gap-1"
+            disabled={restarting}
+          >
+            <Bomb className={`w-3 h-3 ${restarting ? 'animate-pulse' : ''}`} />
+            {restarting ? 'Restarting...' : 'Restart'}
+          </button>
+        </div>
         <div
           className={`ml-2 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
             allClear
