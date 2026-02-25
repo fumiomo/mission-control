@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, XCircle, Terminal, MessageCircleQuestion, Cpu } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, XCircle, Terminal, MessageCircleQuestion, Cpu, RotateCcw } from 'lucide-react';
 
 interface HealthIssue {
   session: string;
@@ -52,6 +52,7 @@ interface HealthData {
 export function HealthStatus() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [restarting, setRestarting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -85,6 +86,21 @@ export function HealthStatus() {
       <div className="flex items-center gap-2">
         <Shield className="w-5 h-5 text-mc-accent-green" />
         <h2 className="text-lg font-semibold">Agent Health</h2>
+        <button
+          onClick={async () => {
+            if (!confirm('Restart OpenClaw gateway? All active sessions will be interrupted.')) return;
+            setRestarting(true);
+            try {
+              await fetch('/api/gateway/restart', { method: 'POST' });
+            } catch {}
+            setTimeout(() => setRestarting(false), 5000);
+          }}
+          className="ml-auto px-2 py-1 text-xs rounded border border-mc-border text-mc-text-secondary hover:text-red-400 hover:border-red-400/50 transition-colors flex items-center gap-1"
+          disabled={restarting}
+        >
+          <RotateCcw className={`w-3 h-3 ${restarting ? 'animate-spin' : ''}`} />
+          {restarting ? 'Restarting...' : 'Restart'}
+        </button>
         <div
           className={`ml-2 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
             allClear

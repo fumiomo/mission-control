@@ -72,12 +72,12 @@ export function WorkspaceDashboard() {
         </div>
 
         {/* Agent Health + Overview */}
-        <div className="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1 space-y-6">
+        <div className="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-6">
             <HealthStatus />
             <SystemServices />
           </div>
-          <div className="lg:col-span-2">
+          <div>
             <AgentOverview />
           </div>
         </div>
