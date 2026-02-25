@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Crown, ChevronDown, ChevronRight, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Crown, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import type { HeraMessage, HeraRun } from '@/app/api/hera/sessions/route';
 import type { PipelineRun } from '@/app/api/hera/pipeline/route';
 
+const JST = 'Asia/Tokyo';
+
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleString('en-US', {
-    timeZone: 'Asia/Tokyo',
+    timeZone: JST,
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -21,6 +23,18 @@ function formatDuration(startMs: number, endMs: number): string {
   const secs = Math.round((endMs - startMs) / 1000);
   if (secs < 60) return `${secs}s`;
   return `${Math.round(secs / 60)}m`;
+}
+
+function extractTaskInfo(run: HeraRun): string | null {
+  const firstUser = run.messages.find(m => m.role === 'user');
+  if (!firstUser) return null;
+  const match = firstUser.content.match(/\[(?:high|normal|low|urgent)\]\s+(.+?)\s+\(id:/);
+  if (match) return match[1];
+  const dashMatch = firstUser.content.match(/- \[(?:high|normal|low|urgent)\]\s+(.+?)\s+\(id:/);
+  if (dashMatch) return dashMatch[1];
+  const taskMatch = firstUser.content.match(/(?:Task|task)[:\s]+(.+?)(?:\n|$)/);
+  if (taskMatch) return taskMatch[1].trim().slice(0, 80);
+  return null;
 }
 
 function MessageBubble({ msg }: { msg: HeraMessage }) {
@@ -48,53 +62,36 @@ function MessageBubble({ msg }: { msg: HeraMessage }) {
         </div>
         <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed">{msg.content}</pre>
         <div className="text-[10px] text-mc-text-secondary mt-1.5 text-right">
-          {new Date(msg.timestamp).toLocaleTimeString('en-US', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+          {new Date(msg.timestamp).toLocaleTimeString('en-US', { timeZone: JST, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
         </div>
       </div>
     </div>
   );
 }
 
-function extractTaskInfo(run: HeraRun): string | null {
-  // Try to find task/project name from first user message
-  const firstUser = run.messages.find(m => m.role === 'user');
-  if (!firstUser) return null;
-  // Look for task title patterns like "[high] Task Name (id: abc123)"
-  const match = firstUser.content.match(/\[(?:high|normal|low|urgent)\]\s+(.+?)\s+\(id:/);
-  if (match) return match[1];
-  // Look for "- [priority] Title" pattern
-  const dashMatch = firstUser.content.match(/- \[(?:high|normal|low|urgent)\]\s+(.+?)\s+\(id:/);
-  if (dashMatch) return dashMatch[1];
-  // Look for "Task:" or "task" mentions
-  const taskMatch = firstUser.content.match(/(?:Task|task)[:\s]+(.+?)(?:\n|$)/);
-  if (taskMatch) return taskMatch[1].trim().slice(0, 80);
-  return null;
-}
-
-function RunCard({ run }: { run: HeraRun }) {
+// A single task conversation (collapsible)
+function TaskCard({ run }: { run: HeraRun }) {
   const [expanded, setExpanded] = useState(false);
   const taskInfo = extractTaskInfo(run);
 
   return (
-    <div className="bg-mc-bg-secondary border border-mc-border rounded-lg overflow-hidden">
-      {/* Header */}
+    <div className="border border-mc-border rounded-lg overflow-hidden">
       <button
-        onClick={() => setExpanded((e) => !e)}
-        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-mc-bg-tertiary transition-colors text-left"
+        onClick={() => setExpanded(e => !e)}
+        className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-mc-bg-tertiary transition-colors text-left"
       >
         {expanded ? (
-          <ChevronDown className="w-4 h-4 text-mc-text-secondary flex-shrink-0" />
+          <ChevronDown className="w-3.5 h-3.5 text-mc-text-secondary flex-shrink-0" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-mc-text-secondary flex-shrink-0" />
+          <ChevronRight className="w-3.5 h-3.5 text-mc-text-secondary flex-shrink-0" />
         )}
-
-        <Crown className="w-4 h-4 text-mc-accent-yellow flex-shrink-0" />
-
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-sm font-semibold text-mc-text">{formatTime(run.startTime)}</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-mc-text">
+              {taskInfo || 'Triage'}
+            </span>
             <span className="text-xs text-mc-text-secondary">
-              {formatDuration(run.startTime, run.endTime)} · {run.messages.length} messages
+              {run.messages.length} messages · {formatDuration(run.startTime, run.endTime)}
             </span>
             {run.decisions.length > 0 && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-mc-accent-green/20 text-mc-accent-green font-medium">
@@ -102,26 +99,16 @@ function RunCard({ run }: { run: HeraRun }) {
               </span>
             )}
           </div>
-
-          {/* Task/project context */}
-          {taskInfo && (
-            <div className="mt-1 text-xs text-mc-accent font-medium truncate">
-              📋 {taskInfo}
-            </div>
-          )}
-
-          {/* Decision previews */}
-          {run.decisions.length > 0 && !expanded && (
+          {/* Preview of last Hera message when collapsed */}
+          {!expanded && run.messages.length > 0 && (
             <div className="mt-1 text-xs text-mc-text-secondary truncate">
-              {run.decisions[0].replace('[Hera decision]', '').trim().slice(0, 120)}
+              {run.messages.filter(m => m.role === 'assistant').pop()?.content.slice(0, 120) || ''}
             </div>
           )}
         </div>
       </button>
-
-      {/* Expanded conversation */}
       {expanded && (
-        <div className="border-t border-mc-border px-4 py-4 max-h-[70vh] overflow-y-auto">
+        <div className="border-t border-mc-border px-4 py-4 max-h-[70vh] overflow-y-auto bg-mc-bg">
           {run.messages.map((msg, i) => (
             <MessageBubble key={i} msg={msg} />
           ))}
@@ -131,16 +118,90 @@ function RunCard({ run }: { run: HeraRun }) {
   );
 }
 
+// Group of task conversations under a time heading
+interface TriageBatch {
+  time: string;
+  startTime: number;
+  runs: HeraRun[];
+  totalMessages: number;
+  totalDecisions: number;
+}
+
+function groupRunsIntoBatches(runs: HeraRun[]): TriageBatch[] {
+  // Group runs that are within 5 minutes of each other (same cron batch)
+  const BATCH_GAP_MS = 5 * 60 * 1000;
+  const batches: TriageBatch[] = [];
+  
+  // Runs are already sorted most-recent-first, reverse for chronological grouping
+  const sorted = [...runs].reverse();
+  
+  let currentBatch: HeraRun[] = [];
+  let batchStart = 0;
+
+  for (const run of sorted) {
+    if (currentBatch.length === 0) {
+      currentBatch = [run];
+      batchStart = run.startTime;
+    } else if (run.startTime - batchStart < BATCH_GAP_MS) {
+      currentBatch.push(run);
+    } else {
+      batches.push(makeBatch(currentBatch));
+      currentBatch = [run];
+      batchStart = run.startTime;
+    }
+  }
+  if (currentBatch.length > 0) {
+    batches.push(makeBatch(currentBatch));
+  }
+  
+  return batches.reverse(); // Most recent first
+}
+
+function makeBatch(runs: HeraRun[]): TriageBatch {
+  const startTime = runs[0].startTime;
+  return {
+    time: formatTime(startTime),
+    startTime,
+    runs,
+    totalMessages: runs.reduce((sum, r) => sum + r.messages.length, 0),
+    totalDecisions: runs.reduce((sum, r) => sum + r.decisions.length, 0),
+  };
+}
+
+function BatchSection({ batch }: { batch: TriageBatch }) {
+  return (
+    <div className="mb-6">
+      {/* Time heading */}
+      <div className="flex items-center gap-3 mb-3">
+        <Crown className="w-4 h-4 text-mc-accent-yellow" />
+        <h3 className="text-sm font-semibold text-mc-text">{batch.time}</h3>
+        <span className="text-xs text-mc-text-secondary">
+          {batch.runs.length} task{batch.runs.length !== 1 ? 's' : ''} · {batch.totalMessages} messages
+        </span>
+        {batch.totalDecisions > 0 && (
+          <span className="text-xs px-1.5 py-0.5 rounded bg-mc-accent-green/20 text-mc-accent-green font-medium">
+            {batch.totalDecisions} decision{batch.totalDecisions !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+      {/* Task conversations */}
+      <div className="space-y-2 ml-7">
+        {batch.runs.map((run) => (
+          <TaskCard key={run.id} run={run} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function HeraPage() {
   const [runs, setRuns] = useState<HeraRun[]>([]);
   const [pipelineRuns, setPipelineRuns] = useState<PipelineRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [launching, setLaunching] = useState(false);
 
   const load = async (showRefresh = false) => {
-    if (showRefresh) setRefreshing(true);
     try {
       const [sessRes, pipeRes] = await Promise.all([
         fetch('/api/hera/sessions'),
@@ -156,13 +217,12 @@ export default function HeraPage() {
       setError(String(e));
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
+
+  const batches = groupRunsIntoBatches(runs);
 
   return (
     <div className="min-h-screen bg-mc-bg text-mc-text font-mono">
@@ -185,8 +245,7 @@ export default function HeraPage() {
               setLaunching(true);
               try {
                 await fetch('/api/hera/launch', { method: 'POST' });
-                // Wait a bit then refresh data
-                setTimeout(() => { load(true); setLaunching(false); }, 5000);
+                setTimeout(() => { load(); setLaunching(false); }, 5000);
               } catch {
                 setLaunching(false);
               }
@@ -214,24 +273,16 @@ export default function HeraPage() {
           </div>
         )}
 
-        {!loading && !error && runs.length === 0 && (
+        {!loading && !error && batches.length === 0 && (
           <div className="text-center text-mc-text-secondary py-12">
             No Hera triage sessions found.
           </div>
         )}
 
-        {!loading && runs.length > 0 && (
-          <>
-            <div className="text-xs text-mc-text-secondary mb-4">
-              {runs.length} triage run{runs.length !== 1 ? 's' : ''} · most recent first
-            </div>
-            <div className="space-y-3">
-              {runs.map((run) => (
-                <RunCard key={run.id} run={run} />
-              ))}
-            </div>
-          </>
-        )}
+        {/* Triage batches grouped by time */}
+        {batches.map((batch, i) => (
+          <BatchSection key={i} batch={batch} />
+        ))}
 
         {/* Pipeline runs (cron log) */}
         {!loading && pipelineRuns.length > 0 && (
