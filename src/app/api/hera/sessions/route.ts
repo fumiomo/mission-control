@@ -90,7 +90,9 @@ function groupIntoRuns(messages: HeraMessage[]): HeraRun[] {
 
   for (let i = 1; i < messages.length; i++) {
     const gap = messages[i].timestamp - messages[i - 1].timestamp;
-    if (gap > GAP_THRESHOLD_MS) {
+    // Split on: 30min gap OR new user message (= new task prompt from pipeline)
+    const isNewPrompt = messages[i].role === 'user';
+    if (gap > GAP_THRESHOLD_MS || isNewPrompt) {
       runs.push(makeRun(current));
       current = [];
     }

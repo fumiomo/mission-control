@@ -62,6 +62,9 @@ function extractTaskInfo(run: HeraRun): string | null {
   // Look for task title patterns like "[high] Task Name (id: abc123)"
   const match = firstUser.content.match(/\[(?:high|normal|low|urgent)\]\s+(.+?)\s+\(id:/);
   if (match) return match[1];
+  // Look for "- [priority] Title" pattern
+  const dashMatch = firstUser.content.match(/- \[(?:high|normal|low|urgent)\]\s+(.+?)\s+\(id:/);
+  if (dashMatch) return dashMatch[1];
   // Look for "Task:" or "task" mentions
   const taskMatch = firstUser.content.match(/(?:Task|task)[:\s]+(.+?)(?:\n|$)/);
   if (taskMatch) return taskMatch[1].trim().slice(0, 80);
