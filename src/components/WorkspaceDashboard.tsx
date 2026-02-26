@@ -54,12 +54,20 @@ export function WorkspaceDashboard() {
               <span className="text-2xl">🦞</span>
               <h1 className="text-xl font-bold">Mission Control</h1>
             </div>
-            <a
-              href="/hera"
-              className="flex items-center gap-2 px-4 py-2 bg-mc-bg rounded-lg font-medium border border-mc-border hover:bg-mc-bg-secondary transition-colors"
-            >
-              👑 Hera
-            </a>
+            <div className="flex items-center gap-2">
+              <a
+                href="/docs"
+                className="flex items-center gap-2 px-4 py-2 bg-mc-bg rounded-lg font-medium border border-mc-border hover:bg-mc-bg-secondary transition-colors text-sm"
+              >
+                📄 MD
+              </a>
+              <a
+                href="/hera"
+                className="flex items-center gap-2 px-4 py-2 bg-mc-bg rounded-lg font-medium border border-mc-border hover:bg-mc-bg-secondary transition-colors"
+              >
+                👑 Hera
+              </a>
+            </div>
           </div>
         </div>
       </header>

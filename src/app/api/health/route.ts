@@ -49,9 +49,37 @@ interface RunningAgent {
   spawnedBy: 'openclaw' | 'user';
 }
 
+function buildParentMap(): Map<string, string> {
+  // Returns pid -> ppid map for all processes
+  const raw = run('ps -eo pid,ppid 2>/dev/null');
+  const map = new Map<string, string>();
+  for (const line of raw.split('\n').slice(1)) {
+    const parts = line.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      map.set(parts[0], parts[1]);
+    }
+  }
+  return map;
+}
+
+function hasAncestor(pid: string, targetPid: string, parentMap: Map<string, string>): boolean {
+  // Walk up the process tree; stop at PID 1 or if we run out of entries
+  let current = parentMap.get(pid);
+  const visited = new Set<string>();
+  while (current && current !== '0' && current !== '1' && !visited.has(current)) {
+    if (current === targetPid) return true;
+    visited.add(current);
+    current = parentMap.get(current);
+  }
+  return false;
+}
+
 function getRunningAgents(): RunningAgent[] {
   // Get gateway PID for matching
   const gatewayPid = run('pgrep -f openclaw-gateway 2>/dev/null').split('\n')[0]?.trim() || '';
+
+  // Build parent map once for efficient ancestor lookups
+  const parentMap = gatewayPid ? buildParentMap() : new Map<string, string>();
 
   // Find claude/codex agent processes with parent PID info
   const raw = run('ps -eo pid,ppid,%cpu,%mem,etime,args --sort=-%cpu 2>/dev/null');
@@ -64,7 +92,6 @@ function getRunningAgents(): RunningAgent[] {
     const parts = line.trim().split(/\s+/);
     if (parts.length < 6) continue;
     const pid = parts[0];
-    const ppid = parts[1];
     const cpu = parts[2] + '%';
     const mem = parts[3] + '%';
     const elapsed = parts[4];
@@ -77,8 +104,9 @@ function getRunningAgents(): RunningAgent[] {
     if (cmd.includes('claude')) type = 'claude-code';
     if (cmd.includes('codex')) type = 'codex';
 
-    // Determine if spawned by OpenClaw
-    const spawnedByOpenClaw = ppid === gatewayPid;
+    // Walk parent tree to detect if any ancestor is the OpenClaw gateway
+    const spawnedByOpenClaw =
+      gatewayPid ? hasAncestor(pid, gatewayPid, parentMap) : false;
 
     // Extract task hint from command
     let taskHint = '';
