@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 
 export const dynamic = 'force-dynamic';
 
-const LOG_PATH = '/home/vincent/storage/data/watchtower/logs/hera-triage.log';
+const LOG_PATH = '/data/watchtower/logs/hera-triage.log';
 
 export interface PipelineRun {
   timestamp: string;

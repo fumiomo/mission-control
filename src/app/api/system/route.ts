@@ -25,71 +25,52 @@ interface Service {
 }
 
 export async function GET() {
-  // Parse crontab
-  const crontabRaw = run('crontab -l 2>/dev/null');
+  // Parse /etc/cron.d/openclaw (container uses system cron, not user crontab)
+  const crontabRaw = run('cat /etc/cron.d/openclaw 2>/dev/null') || run('crontab -l 2>/dev/null');
   const crons: CronJob[] = crontabRaw
     .split('\n')
     .filter((line) => line.trim() && !line.startsWith('#'))
     .map((line) => {
       const parts = line.trim().split(/\s+/);
+      // /etc/cron.d format has user field after schedule (6th field)
       const schedule = parts.slice(0, 5).join(' ');
-      const command = parts.slice(5).join(' ');
+      const command = parts.slice(6).join(' '); // skip user field
       return { schedule, command };
-    });
+    })
+    .filter((c) => c.command);
 
-  // Parse systemd user services
-  const servicesRaw = run(
-    'systemctl --user list-units --type=service --all --no-pager --no-legend 2>/dev/null'
-  );
-  const services: Service[] = servicesRaw
+  // Parse supervisord services (container uses supervisord, not systemd)
+  const supervisorRaw = run('/usr/bin/supervisorctl status 2>/dev/null');
+  const services = supervisorRaw
     .split('\n')
     .filter((line) => line.trim())
     .map((line) => {
-      const parts = line.trim().split(/\s+/);
-      const name = (parts[0] || '').replace('.service', '');
-      const active = parts[2] === 'active';
-      const status = parts[3] || 'unknown';
+      // Format: "name                      STATUS   pid NNN, uptime H:MM:SS"
+      const match = line.match(/^(\S+)\s+(RUNNING|STOPPED|STARTING|FATAL|BACKOFF|EXITED)\s*(.*)/);
+      if (!match) return null;
+      const name = match[1];
+      const status = match[2].toLowerCase();
+      const active = match[2] === 'RUNNING';
+      const pidMatch = match[3]?.match(/pid\s+(\d+)/);
+      const pid = pidMatch ? pidMatch[1] : undefined;
+      const uptimeMatch = match[3]?.match(/uptime\s+(\S+)/);
+      const description = uptimeMatch ? `uptime ${uptimeMatch[1]}` : undefined;
 
-      // Get details for active services
-      let pid, memory, cpu, description;
-      if (active) {
-        const details = run(`systemctl --user show ${name}.service --property=MainPID,MemoryCurrent,Description --no-pager 2>/dev/null`);
-        for (const line of details.split('\n')) {
-          if (line.startsWith('MainPID=')) pid = line.split('=')[1];
-          if (line.startsWith('MemoryCurrent=')) {
-            const bytes = parseInt(line.split('=')[1]);
-            if (!isNaN(bytes) && bytes > 0) memory = (bytes / 1024 / 1024).toFixed(1) + ' MB';
-          }
-          if (line.startsWith('Description=')) description = line.split('=').slice(1).join('=');
-        }
+      // Get memory for running processes
+      let memory;
+      if (active && pid) {
+        const rss = run(`ps -p ${pid} -o rss= 2>/dev/null`);
+        if (rss) memory = (parseInt(rss) / 1024).toFixed(1) + ' MB';
       }
 
-      return { name, status, active, pid, memory, cpu, description };
+      return { name, status, active, pid, memory, description };
     })
-    .filter((s) => {
-      // Only show our services + relevant ones
-      const dominated = [
-        'at-spi', 'dbus', 'dconf', 'dirmngr', 'evolution', 'gcr-', 'gnome',
-        'gpg', 'gvfs', 'keyboxd', 'launchpadlib', 'pipewire', 'pk',
-        'pulseaudio', 'snap', 'ssh-agent', 'systemd', 'tracker',
-        'wireplumber', 'xdg', 'plasma', 'xfce',
-      ];
-      // Filter out junk names and bullet chars from bad parsing
-      if (!s.name || s.name.startsWith('●') || s.name.length < 2) return false;
-      return !dominated.some((prefix) => s.name.startsWith(prefix));
-    });
-
-  // System timers
-  const timersRaw = run('systemctl --user list-timers --no-pager --no-legend 2>/dev/null');
-  const timers = timersRaw
-    .split('\n')
-    .filter((line) => line.trim())
-    .map((line) => line.trim());
+    .filter((s) => s !== null) as Service[];
 
   return NextResponse.json({
     crons,
     services,
-    timers,
+    timers: [],
     timestamp: Date.now(),
   });
 }

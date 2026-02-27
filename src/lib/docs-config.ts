@@ -10,32 +10,32 @@ export const DOCS_FOLDERS: DocsFolder[] = [
   {
     displayName: 'YouTube Swarm / Research',
     key: 'youtube-swarm-research',
-    absPath: '/home/vincent/storage/sandbox/youtube-swarm/research',
+    absPath: '/home/openclaw-vm-user/src/youtube-swarm/research',
   },
   {
     displayName: 'YouTube Swarm / Docs',
     key: 'youtube-swarm-docs',
-    absPath: '/home/vincent/storage/sandbox/youtube-swarm/docs',
+    absPath: '/home/openclaw-vm-user/src/youtube-swarm/docs',
   },
   {
     displayName: 'Articles',
     key: 'articles',
-    absPath: '/home/vincent/storage/sandbox/articles',
+    absPath: '/data/articles',
   },
   {
     displayName: 'OpenClaw',
     key: 'openclaw',
-    absPath: '/home/vincent/storage/sandbox/openclaw',
+    absPath: '/home/openclaw-vm-user/src/workspace',
   },
   {
     displayName: 'Taikyohi',
     key: 'taikyohi',
-    absPath: '/home/vincent/storage/sandbox/taikyohi',
+    absPath: '/home/openclaw-vm-user/src/taikyohi',
   },
   {
     displayName: 'Transcripts',
     key: 'transcripts',
-    absPath: '/home/vincent/storage/sandbox/transcripts',
+    absPath: '/data/transcripts',
   },
 ];
 

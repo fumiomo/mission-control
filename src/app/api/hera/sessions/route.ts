@@ -4,7 +4,7 @@ import { join } from 'path';
 
 export const dynamic = 'force-dynamic';
 
-const SESSIONS_DIR = '/home/vincent/.openclaw/agents/hera/sessions';
+const SESSIONS_DIR = '/home/openclaw-vm-user/.openclaw/agents/hera/sessions';
 const GAP_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
 
 export interface HeraMessage {

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, ArrowRight, Folder, Users, CheckSquare, Trash2, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, ArrowRight, Folder, Users, CheckSquare, Trash2, AlertTriangle, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import type { WorkspaceStats } from '@/lib/types';
 import { ServerMonitor } from './watchtower/ServerMonitor';
@@ -54,20 +54,7 @@ export function WorkspaceDashboard() {
               <span className="text-2xl">🦞</span>
               <h1 className="text-xl font-bold">Mission Control</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <a
-                href="/docs"
-                className="flex items-center gap-2 px-4 py-2 bg-mc-bg rounded-lg font-medium border border-mc-border hover:bg-mc-bg-secondary transition-colors text-sm"
-              >
-                📄 MD
-              </a>
-              <a
-                href="/hera"
-                className="flex items-center gap-2 px-4 py-2 bg-mc-bg rounded-lg font-medium border border-mc-border hover:bg-mc-bg-secondary transition-colors"
-              >
-                👑 Hera
-              </a>
-            </div>
+            <ToolsMenu />
           </div>
         </div>
       </header>
@@ -147,6 +134,54 @@ export function WorkspaceDashboard() {
             loadWorkspaces();
           }}
         />
+      )}
+    </div>
+  );
+}
+
+function ToolsMenu() {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  const items = [
+    { href: '/docs', icon: '📄', label: 'Docs' },
+    { href: '/hera', icon: '👑', label: 'Hera Logs' },
+    { href: '/api/media', icon: '📂', label: 'Media' },
+  ];
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 px-4 py-2 bg-mc-bg rounded-lg font-medium border border-mc-border hover:bg-mc-bg-secondary transition-colors text-sm"
+      >
+        Tools
+        <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 bg-mc-bg-secondary border border-mc-border rounded-lg shadow-lg overflow-hidden z-50">
+          {items.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-3 px-4 py-3 hover:bg-mc-bg transition-colors text-sm"
+              onClick={() => setOpen(false)}
+            >
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
+            </a>
+          ))}
+        </div>
       )}
     </div>
   );

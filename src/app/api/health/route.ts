@@ -37,7 +37,7 @@ interface BlockedSession {
   minutesWaiting: number;
 }
 
-const SESSIONS_DIR = '/home/vincent/.openclaw/agents/main/sessions';
+const SESSIONS_DIR = '/home/openclaw-vm-user/.openclaw/agents/main/sessions';
 
 interface RunningAgent {
   pid: string;
@@ -210,8 +210,8 @@ function getTmuxSessions(): TmuxSession[] {
     const minutesRunning = Math.round((now - created) / 60000);
 
     const logLocations = [
-      `/home/vincent/storage/sandbox/watchtower/tasks/${name}-transcript.log`,
-      `/home/vincent/storage/sandbox/watchtower/tasks/${name}.log`,
+      `/home/openclaw-vm-user/src/watchtower/tasks/${name}-transcript.log`,
+      `/home/openclaw-vm-user/src/watchtower/tasks/${name}.log`,
     ];
 
     let logFile: string | undefined;
